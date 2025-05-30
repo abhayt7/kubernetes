@@ -1,0 +1,98 @@
+sudo apt update
+
+sudo apt install -y docker.io curl
+
+sudo usermod -aG docker $USER && newgrp docker
+
+
+kind_cluster.sh
+#!/bin/bash
+
+[ $(uname -m) = x86_64 ] && curl -Lo ./kind https://kind.sigs.k8s.io/dl/v0.27.0/kind-linux-amd64
+chmod +x ./kind
+sudo mv ./kind /usr/local/bin/kind
+
+VERSION="v1.30.0"
+URL="https://dl.k8s.io/release/${VERSION}/bin/linux/amd64/kubectl"
+INSTALL_DIR="/usr/local/bin"
+
+curl -LO "$URL"
+chmod +x kubectl
+sudo mv kubectl $INSTALL_DIR/
+kubectl version --client
+
+rm -f kubectl
+rm -rf kind
+
+echo "kind & kubectl installation complete."
+
+
+
+nano kind-config.yaml
+kind: Cluster
+apiVersion: kind.x-k8s.io/v1alpha4
+nodes:
+- role: control-plane
+  extraPortMappings:
+    - containerPort: 30080
+      hostPort: 30080
+      protocol: TCP
+
+
+kind create cluster --name kind-cluster --config kind-config.yaml
+
+
+
+
+nano nginx-deployment.yaml
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: nginx-deployment
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: nginx
+  template:
+    metadata:
+      labels:
+        app: nginx
+    spec:
+      containers:
+      - name: nginx
+        image: nginx:latest
+        ports:
+        - containerPort: 80
+
+
+
+
+nano nginx-service.yaml
+apiVersion: v1
+kind: Service
+metadata:
+  name: nginx-service
+spec:
+  selector:
+    app: nginx
+  type: NodePort
+  ports:
+    - protocol: TCP
+      port: 80
+      targetPort: 80
+      nodePort: 30080
+
+
+
+kubectl apply -f nginx-deployment.yaml
+kubectl apply -f nginx-service.yaml
+
+
+kubectl apply -f nginx-deployment.yaml
+kubectl apply -f nginx-service.yaml
+
+
+http://<your-ec2-public-ip>:30080
+open port on ec2 security group 30080
+
