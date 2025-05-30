@@ -89,8 +89,6 @@ kubectl apply -f nginx-deployment.yaml
 kubectl apply -f nginx-service.yaml
 
 
-kubectl apply -f nginx-deployment.yaml
-kubectl apply -f nginx-service.yaml
 
 
 http://<your-ec2-public-ip>:30080
